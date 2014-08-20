@@ -1,6 +1,8 @@
 express-dropbox-oauth
 =====================
 
+[![Build Status](https://travis-ci.org/Xiphe/express-dropbox-oauth.svg)](https://travis-ci.org/Xiphe/express-dropbox-oauth)
+
 Dropbox OAuth Middleware for ExpressJS
 
 
