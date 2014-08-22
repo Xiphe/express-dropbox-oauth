@@ -5,7 +5,9 @@
   "main": "lib/index.coffee",
   "scripts": {
     "test": "mocha --compilers coffee:coffee-script/register -R spec",
-    "watch": "mocha --compilers coffee:coffee-script/register --watch -R spec"
+    "watch": "mocha --compilers coffee:coffee-script/register --watch -R spec",
+    "coverage": "coffee -o src/ src/ && coffee -o test/ test/ && istanbul cover node_modules/.bin/_mocha --report html -- -R spec -t 3000 -s 2000",
+    "coveralls": "coffee -o src/ src/ && coffee -o test/ test/ && istanbul cover _mocha --report lcovonly -- -R spec -t 3000 -s 2000 && cat ./coverage/lcov.info | coveralls"
   },
   "author": "Hannes Diercks <express-dropbox-auth@xiphe.net>",
   "license": "MIT",
@@ -21,6 +23,8 @@
     "chai": "~1.9.1",
     "sinon-chai": "~2.5.0",
     "supertest": "~0.13.0",
-    "minimist": "~1.1.0"
+    "minimist": "~1.1.0",
+    "istanbul": "~0.2.8",
+    "coveralls": "~2.10.0"
   }
 }
