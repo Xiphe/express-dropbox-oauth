@@ -2,6 +2,8 @@ express-dropbox-oauth
 =====================
 
 [![Build Status](https://travis-ci.org/Xiphe/express-dropbox-oauth.svg)](https://travis-ci.org/Xiphe/express-dropbox-oauth)
+[![Coverage Status](https://coveralls.io/repos/Xiphe/express-dropbox-oauth/badge.png?branch=master)](https://coveralls.io/r/Xiphe/express-dropbox-oauth?branch=master)
+[![Dependency Status](https://david-dm.org/Xiphe/express-dropbox-oauth.svg)](https://david-dm.org/Xiphe/express-dropbox-oauth)
 
 Dropbox OAuth Middleware for ExpressJS
 
