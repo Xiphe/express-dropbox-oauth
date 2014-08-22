@@ -10,20 +10,33 @@ describe 'ExpressDropboxAuth', ->
   EMPTY_DB_ERROR = new Error 'Not Found'
 
   fakeStorageGetCalls =
-    state: (done) -> done EMPTY_DB_ERROR
-    token: (done) -> done EMPTY_DB_ERROR
+    state: (done) -> done? EMPTY_DB_ERROR
+    token: (done) -> done? EMPTY_DB_ERROR
+
+  fakeStorageSetCalls =
+    state: (value, done) -> done?()
+    token: (value, done) -> done?()
 
   fakeStorage =
-    set: (key, value, done) -> done()
+    set: (key, value, done) ->
+      if key == constants.STORAGE_KEY_STATE
+        fakeStorageSetCalls.state(value, done)
+      else
+        fakeStorageSetCalls.token(value, done)
     get: (key, done) ->
       if key == constants.STORAGE_KEY_STATE then fakeStorageGetCalls.state(done) else fakeStorageGetCalls.token(done)
-    delete: (key, done) -> done()
+    delete: (key, done) -> done?()
 
   assumeStoredState = (state) ->
     sinon.stub(fakeStorageGetCalls, 'state').callsArgWithAsync 0, null, state
 
   assumeStoredToken = (token) ->
     sinon.stub(fakeStorageGetCalls, 'token').callsArgWithAsync 0, null, token
+
+  assumeSuccessfullAuth = (code) ->
+    sinon.stub(expressDropboxAuth.dropboxClient, 'credentials').returns {token: code}
+    sinon.stub(expressDropboxAuth.dropboxClient, 'authenticate')
+      .callsArgWithAsync 0, null, expressDropboxAuth.dropboxClient
 
   app = null
   xhrStub = null
@@ -183,6 +196,9 @@ describe 'ExpressDropboxAuth', ->
           done err
 
     describe 'AuthDriver', ->
+      req = null
+      res = null
+
       getDriver = (callback) ->
         request app
           .get ENDPOINT_AUTH
@@ -191,8 +207,15 @@ describe 'ExpressDropboxAuth', ->
             callback err, expressDropboxAuth.dropboxClient.authDriver.getCall(0).args[0]
 
       beforeEach ->
+        req = null
+        res = null
+        setReqRes = (rq, rs, next) ->
+          req = rq
+          res = rs
+          next()
+
         sinon.spy expressDropboxAuth.dropboxClient, 'authDriver'
-        app.get ENDPOINT_AUTH, expressDropboxAuth.doAuth()
+        app.get ENDPOINT_AUTH, setReqRes, expressDropboxAuth.doAuth()
 
       it 'should be of type code', (done) ->
         getDriver (err, driver) ->
@@ -201,7 +224,7 @@ describe 'ExpressDropboxAuth', ->
 
       it 'should use the current url', (done) ->
         getDriver (err, driver) ->
-          driver.url().should.equal ENDPOINT_AUTH
+          driver.url().should.equal  req.protocol + '://' + req.get('host') + ENDPOINT_AUTH
           done err
 
       it 'should use the storage to get the state parameter', (done) ->
@@ -222,74 +245,76 @@ describe 'ExpressDropboxAuth', ->
         .expect 'location', /www\.dropbox\.com/
         .expect 302, done
 
-    it 'should retry checkAuth', (done) ->
-      expectXhr = 1
-      assumeStoredState 'myState'
-      app.get ENDPOINT_AUTH, expressDropboxAuth.doAuth()
-      sinon.spy expressDropboxAuth, 'checkAuth'
+    describe 'with successful authentication', ->
+      queryCode = null
+      beforeEach ->
+        queryCode = 'someCode'
+        assumeSuccessfullAuth(queryCode)
 
-      request app
-        .get ENDPOINT_AUTH
-        .query code: 'someCode'
-        .end (err) ->
-          expressDropboxAuth.checkAuth.should.have.been.calledTwice
-          done err
+      it 'should retry checkAuth after successful authentication', (done) ->
+        assumeStoredState 'myState'
+        app.get ENDPOINT_AUTH, expressDropboxAuth.doAuth()
+        sinon.spy expressDropboxAuth, 'checkAuth'
 
-    it 'should call through when code param exists in query', (done) ->
-      expectXhr = 1
-      assumeStoredState 'myState'
-      response = 'Hello Authenticated User'
-      app.get ENDPOINT_AUTH, expressDropboxAuth.doAuth(), (req, res) ->
-        res.send response
+        request app
+          .get ENDPOINT_AUTH
+          .query code: 'someCode'
+          .end (err) ->
+            expressDropboxAuth.checkAuth.should.have.been.calledTwice
+            done err
 
-      sinon.stub(expressDropboxAuth.dropboxClient, 'getUserInfo').callsArgWithAsync 0, null, {}
-      authenticatedUser = sinon.stub(expressDropboxAuth.dropboxClient, 'isAuthenticated')
-      authenticatedUser.onFirstCall().returns false
-      authenticatedUser.onSecondCall().returns true
+      it 'should call through when code param exists in query', (done) ->
+        assumeStoredState 'myState'
+        response = 'Hello Authenticated User'
+        app.get ENDPOINT_AUTH, expressDropboxAuth.doAuth(), (req, res) ->
+          res.send response
 
-      request app
-        .get ENDPOINT_AUTH
-        .query code: 'someCode'
-        .expect response
-        .expect 200, done
+        sinon.stub(expressDropboxAuth.dropboxClient, 'getUserInfo').callsArgWithAsync 0, null, {}
+        authenticatedUser = sinon.stub(expressDropboxAuth.dropboxClient, 'isAuthenticated')
+        authenticatedUser.onFirstCall().returns false
+        authenticatedUser.onSecondCall().returns true
 
-    it 'should save the received code in storage', (done) ->
-      expectXhr = 1
-      assumeStoredState 'myState'
-      queryCode = 'someCode'
-      sinon.spy fakeStorage, 'set'
-      app.get ENDPOINT_AUTH, expressDropboxAuth.doAuth()
+        request app
+          .get ENDPOINT_AUTH
+          .query code: 'someCode'
+          .expect response
+          .expect 200, done
 
-      request app
-        .get ENDPOINT_AUTH
-        .query code: queryCode
-        .end (err) ->
-          fakeStorage.set.should.have.been.calledWith constants.STORAGE_KEY_TOKEN, queryCode
-          done err
+      it 'should save the received code in storage', (done) ->
+        assumeStoredState 'myState'
+        sinon.spy fakeStorageSetCalls, 'token'
+        app.get ENDPOINT_AUTH, expressDropboxAuth.doAuth()
 
-    it 'should fail when the storage failed to save the code', (done) ->
-      queryCode = 'someCode'
-      assumeStoredState 'myState'
-      sinon.stub(fakeStorage, 'set').callsArgWithAsync 2, 'Error'
-      app.get ENDPOINT_AUTH, expressDropboxAuth.doAuth()
+        request app
+          .get ENDPOINT_AUTH
+          .query code: queryCode
+          .end (err) ->
+            fakeStorageSetCalls.token.should.have.been.calledWith queryCode
+            done err
 
-      request app
-        .get ENDPOINT_AUTH
-        .query code: queryCode, state: 'someState'
-        .expect 401, done
+      it 'should fail when the storage failed to save the token', (done) ->
+        queryCode = 'someCode'
+        assumeStoredState 'myState'
+        sinon.stub(fakeStorageSetCalls, 'token').callsArgWithAsync 1, 'Error'
+        app.get ENDPOINT_AUTH, expressDropboxAuth.doAuth()
 
-    it 'should invoke a given callback on fail', (done) ->
-      response = 'someResponse'
-      error = new Error 'my message'
-      sinon.stub(fakeStorage, 'set').callsArgWithAsync 2, error
-      app.get ENDPOINT_AUTH, expressDropboxAuth.doAuth (err, req, res) ->
-        err.should.equal error
-        res.send response
+        request app
+          .get ENDPOINT_AUTH
+          .query code: queryCode, state: 'someState'
+          .expect 401, done
 
-      request app
-        .get ENDPOINT_AUTH
-        .expect response
-        .expect 200, done
+      it 'should invoke a given callback on fail', (done) ->
+        response = 'someResponse'
+        error = new Error 'my message'
+        sinon.stub(fakeStorageSetCalls, 'token').callsArgWithAsync 1, error
+        app.get ENDPOINT_AUTH, expressDropboxAuth.doAuth (err, req, res) ->
+          err.should.equal error
+          res.send response
+
+        request app
+          .get ENDPOINT_AUTH
+          .expect response
+          .expect 200, done
 
   describe 'logout', ->
     it 'should logout', (done) ->

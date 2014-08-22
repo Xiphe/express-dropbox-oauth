@@ -33,18 +33,27 @@ class ExpressDropboxAuth
     return (req, res, next) =>
       fail = (err) -> failCb(err, req, res, next)
 
-      unauthCb = =>
+      step2 = =>
+        if !req.query.code and !req.query.error
+          @logout()(req, res, step3)
+        else
+          step3()
+
+      step3 = =>
         helpers.getStateParam req, @storage, (err, state) =>
           return fail err if err
 
           driver = new ExpressDropboxAuthDriver req, res, @storage, fail
 
           @dropboxClient.authDriver driver
-          @dropboxClient.authenticate (error, client) =>
-            @checkAuth(failCb)(req, res, next)
+          @dropboxClient.authenticate (err, client) =>
+            @storage.delete constants.STORAGE_KEY_STATE
+            return fail err if err
+            @storage.set constants.STORAGE_KEY_TOKEN, client.credentials().token, (err) =>
+              return fail err if err
+              @checkAuth(failCb)(req, res, next)
 
-
-      @checkAuth(unauthCb)(req, res, next)
+      @checkAuth(step2)(req, res, next)
 
   logout: (failCb) ->
     if !helpers.isFunction failCb
