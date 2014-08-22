@@ -24,3 +24,4 @@ describe 'setup', ->
 
 
 require './expressDropboxAuthSpec'
+require './storage/nedbAdapterSpec'

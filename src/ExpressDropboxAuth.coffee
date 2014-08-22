@@ -2,6 +2,7 @@ Dropbox = require 'dropbox'
 helpers = require './helpers'
 constants = require './constants'
 ExpressDropboxAuthDriver = require './ExpressDropboxAuthDriver'
+StorageNedbAdapter = require './storage/NedbAdapter'
 
 class ExpressDropboxAuth
   constructor: (credentials, @storage) ->
@@ -69,4 +70,5 @@ class ExpressDropboxAuth
         return fail new Error "" + errors if errors.length
         next()
 
+ExpressDropboxAuth.StorageNedbAdapter = StorageNedbAdapter
 module.exports = ExpressDropboxAuth
