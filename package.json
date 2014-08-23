@@ -1,8 +1,16 @@
 {
-  "name": "express-dropbox-auth",
-  "version": "0.0.0",
-  "description": "Dropbox OAuth middleware for Express.",
-  "main": "lib/index.coffee",
+  "name": "express-dropbox-oauth",
+  "version": "0.0.1",
+  "description": "Dropbox OAuth Middleware for express.",
+  "author": "Hannes Diercks <express-dropbox-oauth@xiphe.net>",
+  "license": "MIT",
+  "keywords": [
+    "express",
+    "oauth",
+    "dropbox"
+  ],
+  "repository": "https://github.com/Xiphe/express-dropbox-oauth.git",
+  "homepage": "https://github.com/Xiphe/express-dropbox-oauth",
   "scripts": {
     "test": "mocha --compilers coffee:coffee-script/register -R spec",
     "watch": "mocha --compilers coffee:coffee-script/register --watch -R spec",
@@ -10,8 +18,7 @@
     "clean": "find src -iname '*.js' -delete && find test -iname '*.js' -delete",
     "coveralls": "coffee -o src/ src/ && coffee -o test/ test/ && istanbul cover _mocha --report lcovonly -- -R spec -t 3000 -s 2000 && cat ./coverage/lcov.info | coveralls"
   },
-  "author": "Hannes Diercks <express-dropbox-auth@xiphe.net>",
-  "license": "MIT",
+  "main": "lib/index.coffee",
   "dependencies": {
     "dropbox": "Xiphe/dropbox-js#50cef4dfe1daf0f6c539bffe2c9256dd2fcefb12"
   },
