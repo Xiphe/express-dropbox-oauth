@@ -23,5 +23,5 @@ describe 'setup', ->
     spy.should.have.been.calledWith 5
 
 
-require './expressDropboxAuthSpec'
+require './expressDropboxOAuthSpec'
 require './storage/nedbAdapterSpec'

@@ -1,1 +1,1 @@
-module.exports = require './ExpressDropboxAuth'
+module.exports = require './ExpressDropboxOAuth'

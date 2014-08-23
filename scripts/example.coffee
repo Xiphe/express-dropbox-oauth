@@ -13,7 +13,7 @@ SERVER_PORT = argv.port || 3000
 #* BOOTSTRAP
 #***********
 
-ExpressDropboxAuth = require './../src/index'
+ExpressDropboxOAuth = require './../src/index'
 express = require 'express'
 Datastore = require 'nedb'
 
@@ -22,8 +22,8 @@ credentials =
   secret: APP_SECRET
 
 database = new Datastore filename: DATABASE_FILE, autoload: true
-databaseAdapter = new ExpressDropboxAuth.StorageNedbAdapter database, USER_ID
-expressDropboxAuth = new ExpressDropboxAuth credentials, databaseAdapter
+databaseAdapter = new ExpressDropboxOAuth.StorageNedbAdapter database, USER_ID
+expressDropboxOAuth = new ExpressDropboxOAuth credentials, databaseAdapter
 app = express()
 
 
@@ -36,18 +36,18 @@ unauthRoute = (err, req, res) ->
     <a href="/auth">click here to authenticate</a>
   """
 
-app.get '/logout', expressDropboxAuth.logout(), (req, res) ->
+app.get '/logout', expressDropboxOAuth.logout(), (req, res) ->
   res.redirect '/'
 
-app.get '/auth', expressDropboxAuth.doAuth(unauthRoute), (req, res) ->
+app.get '/auth', expressDropboxOAuth.doAuth(unauthRoute), (req, res) ->
   res.redirect '/'
 
 authRoute = (req, res) ->
-  expressDropboxAuth.dropboxClient.getUserInfo (err, user) ->
+  expressDropboxOAuth.dropboxClient.getUserInfo (err, user) ->
     res.send """
       Hello #{user.name}, how are you? <a href='/logout'>logout</a>
     """
-app.get '*', expressDropboxAuth.checkAuth(unauthRoute), authRoute
+app.get '*', expressDropboxOAuth.checkAuth(unauthRoute), authRoute
 
 
 #* SERVER

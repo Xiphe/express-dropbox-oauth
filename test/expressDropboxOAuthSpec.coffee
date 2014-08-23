@@ -1,8 +1,8 @@
-describe 'ExpressDropboxAuth', ->
+describe 'ExpressDropboxOAuth', ->
   request = require 'supertest'
   appFactory = require './testApp'
   Dropbox = require 'dropbox'
-  ExpressDropboxAuth = require './../src/index'
+  ExpressDropboxOAuth = require './../src/index'
   constants = require './../src/constants'
 
   ENDPOINT_AUTH = '/auth'
@@ -34,19 +34,19 @@ describe 'ExpressDropboxAuth', ->
     sinon.stub(fakeStorageGetCalls, 'token').callsArgWithAsync 0, null, token
 
   assumeSuccessfullAuth = (code) ->
-    sinon.stub(expressDropboxAuth.dropboxClient, 'credentials').returns {token: code}
-    sinon.stub(expressDropboxAuth.dropboxClient, 'authenticate')
-      .callsArgWithAsync 0, null, expressDropboxAuth.dropboxClient
+    sinon.stub(expressDropboxOAuth.dropboxClient, 'credentials').returns {token: code}
+    sinon.stub(expressDropboxOAuth.dropboxClient, 'authenticate')
+      .callsArgWithAsync 0, null, expressDropboxOAuth.dropboxClient
 
   app = null
   xhrStub = null
   expectXhr = false
-  expressDropboxAuth = null
+  expressDropboxOAuth = null
   beforeEach ->
     app = appFactory()
     xhrStub = sinon.stub Dropbox.Client.prototype, '_dispatchXhr'
     expectXhr = false
-    expressDropboxAuth = new ExpressDropboxAuth key: 'myKey', secret: 'mySecret', fakeStorage
+    expressDropboxOAuth = new ExpressDropboxOAuth key: 'myKey', secret: 'mySecret', fakeStorage
 
     xhrStub.callsArgWithAsync 1, new Dropbox.ApiError {status: 400}, 'POST', 'http://example.org'
 
@@ -58,25 +58,25 @@ describe 'ExpressDropboxAuth', ->
       xhrStub.callCount.should.equal expectXhr
 
   it 'should expose Dropbox', ->
-    expressDropboxAuth.Dropbox.should.equal Dropbox
+    expressDropboxOAuth.Dropbox.should.equal Dropbox
 
   it 'should expose the dropboxClient', ->
-    expressDropboxAuth.dropboxClient.should.be.an.instanceof Dropbox.Client
+    expressDropboxOAuth.dropboxClient.should.be.an.instanceof Dropbox.Client
 
   describe 'checkAuth', ->
     someResponse = 'Hello Authenticated World'
 
     it 'should send Unauthorized response by default', (done) ->
-      app.get ENDPOINT_AUTH, expressDropboxAuth.checkAuth()
+      app.get ENDPOINT_AUTH, expressDropboxOAuth.checkAuth()
 
       request app
         .get ENDPOINT_AUTH
         .expect 401, done
 
     it 'should do nothing if user is authenticated', (done) ->
-      app.get ENDPOINT_AUTH, expressDropboxAuth.checkAuth(), (req, res) -> res.send someResponse
-      sinon.stub(expressDropboxAuth.dropboxClient, 'isAuthenticated').returns true
-      sinon.stub(expressDropboxAuth.dropboxClient, 'getUserInfo').callsArgAsync 0
+      app.get ENDPOINT_AUTH, expressDropboxOAuth.checkAuth(), (req, res) -> res.send someResponse
+      sinon.stub(expressDropboxOAuth.dropboxClient, 'isAuthenticated').returns true
+      sinon.stub(expressDropboxOAuth.dropboxClient, 'getUserInfo').callsArgAsync 0
 
       request app
         .get ENDPOINT_AUTH
@@ -85,7 +85,7 @@ describe 'ExpressDropboxAuth', ->
 
     it 'should try to get the auth-token from storage', (done) ->
       sinon.spy fakeStorage, 'get'
-      app.get ENDPOINT_AUTH, expressDropboxAuth.checkAuth()
+      app.get ENDPOINT_AUTH, expressDropboxOAuth.checkAuth()
 
       request app
         .get ENDPOINT_AUTH
@@ -98,9 +98,9 @@ describe 'ExpressDropboxAuth', ->
       fakeToken = 'someFakeToken'
       assumeStoredToken fakeToken
 
-      setCredentialsSpy = sinon.spy expressDropboxAuth.dropboxClient, 'setCredentials'
+      setCredentialsSpy = sinon.spy expressDropboxOAuth.dropboxClient, 'setCredentials'
 
-      app.get ENDPOINT_AUTH, expressDropboxAuth.checkAuth()
+      app.get ENDPOINT_AUTH, expressDropboxOAuth.checkAuth()
 
       request app
         .get ENDPOINT_AUTH
@@ -112,7 +112,7 @@ describe 'ExpressDropboxAuth', ->
     it 'should invoke a given callback on fail', (done) ->
       myCallback = sinon.spy (err, req, res) ->
         res.send someResponse
-      app.get ENDPOINT_AUTH, expressDropboxAuth.checkAuth myCallback
+      app.get ENDPOINT_AUTH, expressDropboxOAuth.checkAuth myCallback
 
       request app
         .get ENDPOINT_AUTH
@@ -124,34 +124,34 @@ describe 'ExpressDropboxAuth', ->
 
   describe 'doAuth', ->
     it 'should checkAuth at first', (done) ->
-      sinon.spy expressDropboxAuth, 'checkAuth'
+      sinon.spy expressDropboxOAuth, 'checkAuth'
 
-      app.get ENDPOINT_AUTH, expressDropboxAuth.doAuth()
+      app.get ENDPOINT_AUTH, expressDropboxOAuth.doAuth()
 
       request app
         .get ENDPOINT_AUTH
         .end (err) ->
-          expressDropboxAuth.checkAuth.should.have.been.called
+          expressDropboxOAuth.checkAuth.should.have.been.called
           done err
 
     describe 'state', ->
       it 'should create a state parameter', (done) ->
-        sinon.spy expressDropboxAuth.Dropbox.Util.Oauth, 'randomAuthStateParam'
+        sinon.spy expressDropboxOAuth.Dropbox.Util.Oauth, 'randomAuthStateParam'
 
-        app.get ENDPOINT_AUTH, expressDropboxAuth.doAuth()
+        app.get ENDPOINT_AUTH, expressDropboxOAuth.doAuth()
 
         request app
           .get ENDPOINT_AUTH
           .end (err) ->
-            expressDropboxAuth.Dropbox.Util.Oauth.randomAuthStateParam.should.have.been.called
+            expressDropboxOAuth.Dropbox.Util.Oauth.randomAuthStateParam.should.have.been.called
             done err
 
       it 'should tell the storage to set the state parameter', (done) ->
         fakeState = 'someState'
-        sinon.stub(expressDropboxAuth.Dropbox.Util.Oauth, 'randomAuthStateParam').returns fakeState
+        sinon.stub(expressDropboxOAuth.Dropbox.Util.Oauth, 'randomAuthStateParam').returns fakeState
         sinon.spy fakeStorage, 'set'
 
-        app.get ENDPOINT_AUTH, expressDropboxAuth.doAuth()
+        app.get ENDPOINT_AUTH, expressDropboxOAuth.doAuth()
 
         request app
           .get ENDPOINT_AUTH
@@ -161,23 +161,23 @@ describe 'ExpressDropboxAuth', ->
 
       it 'should not create a state parameter when present in request nor set it', (done) ->
         fakeState = 'someState'
-        sinon.spy expressDropboxAuth.Dropbox.Util.Oauth, 'randomAuthStateParam'
+        sinon.spy expressDropboxOAuth.Dropbox.Util.Oauth, 'randomAuthStateParam'
         sinon.spy fakeStorage, 'set'
 
-        app.get ENDPOINT_AUTH, expressDropboxAuth.doAuth()
+        app.get ENDPOINT_AUTH, expressDropboxOAuth.doAuth()
 
         request app
           .get ENDPOINT_AUTH
           .query state: fakeState
           .end (err) ->
-            expressDropboxAuth.Dropbox.Util.Oauth.randomAuthStateParam.should.not.have.been.called
+            expressDropboxOAuth.Dropbox.Util.Oauth.randomAuthStateParam.should.not.have.been.called
             fakeStorage.set.should.not.have.been.called
             done err
 
       it 'should fail when the storage fails to set the state', (done) ->
         sinon.stub(fakeStorage, 'set').callsArgWithAsync 2, new Error 'something went wrong'
 
-        app.get ENDPOINT_AUTH, expressDropboxAuth.doAuth()
+        app.get ENDPOINT_AUTH, expressDropboxOAuth.doAuth()
 
         request app
           .get ENDPOINT_AUTH
@@ -185,14 +185,14 @@ describe 'ExpressDropboxAuth', ->
 
 
     it 'should set a new authDriver to dropbox', (done) ->
-      sinon.spy expressDropboxAuth.dropboxClient, 'authDriver'
+      sinon.spy expressDropboxOAuth.dropboxClient, 'authDriver'
 
-      app.get ENDPOINT_AUTH, expressDropboxAuth.doAuth()
+      app.get ENDPOINT_AUTH, expressDropboxOAuth.doAuth()
 
       request app
         .get ENDPOINT_AUTH
         .end (err) ->
-          expressDropboxAuth.dropboxClient.authDriver.should.have.been.called
+          expressDropboxOAuth.dropboxClient.authDriver.should.have.been.called
           done err
 
     describe 'AuthDriver', ->
@@ -203,8 +203,8 @@ describe 'ExpressDropboxAuth', ->
         request app
           .get ENDPOINT_AUTH
           .end (err) ->
-            expressDropboxAuth.dropboxClient.authDriver.should.have.been.called
-            callback err, expressDropboxAuth.dropboxClient.authDriver.getCall(0).args[0]
+            expressDropboxOAuth.dropboxClient.authDriver.should.have.been.called
+            callback err, expressDropboxOAuth.dropboxClient.authDriver.getCall(0).args[0]
 
       beforeEach ->
         req = null
@@ -214,8 +214,8 @@ describe 'ExpressDropboxAuth', ->
           res = rs
           next()
 
-        sinon.spy expressDropboxAuth.dropboxClient, 'authDriver'
-        app.get ENDPOINT_AUTH, setReqRes, expressDropboxAuth.doAuth()
+        sinon.spy expressDropboxOAuth.dropboxClient, 'authDriver'
+        app.get ENDPOINT_AUTH, setReqRes, expressDropboxOAuth.doAuth()
 
       it 'should be of type code', (done) ->
         getDriver (err, driver) ->
@@ -238,7 +238,7 @@ describe 'ExpressDropboxAuth', ->
 
     it 'should redirect to dropbox when authorizing without a code param', (done) ->
       assumeStoredState 'myState'
-      app.get ENDPOINT_AUTH, expressDropboxAuth.doAuth()
+      app.get ENDPOINT_AUTH, expressDropboxOAuth.doAuth()
 
       request app
         .get ENDPOINT_AUTH
@@ -248,10 +248,10 @@ describe 'ExpressDropboxAuth', ->
     it 'should fail when authenticate fails', (done) ->
       someError = new Error 'hello'
       response = 'failed'
-      sinon.stub(expressDropboxAuth.dropboxClient, 'authenticate')
+      sinon.stub(expressDropboxOAuth.dropboxClient, 'authenticate')
         .callsArgWithAsync 0, someError
 
-      app.get ENDPOINT_AUTH, expressDropboxAuth.doAuth (err, res, req) ->
+      app.get ENDPOINT_AUTH, expressDropboxOAuth.doAuth (err, res, req) ->
         err.should.equal someError
         req.send response
 
@@ -266,7 +266,7 @@ describe 'ExpressDropboxAuth', ->
       response = 'failed again'
       error = 'some very special error string'
 
-      app.get ENDPOINT_AUTH, expressDropboxAuth.doAuth (err, req, res) ->
+      app.get ENDPOINT_AUTH, expressDropboxOAuth.doAuth (err, req, res) ->
         err.should.match new RegExp error
         res.send response
 
@@ -285,24 +285,24 @@ describe 'ExpressDropboxAuth', ->
 
       it 'should retry checkAuth after successful authentication', (done) ->
         assumeStoredState 'myState'
-        app.get ENDPOINT_AUTH, expressDropboxAuth.doAuth()
-        sinon.spy expressDropboxAuth, 'checkAuth'
+        app.get ENDPOINT_AUTH, expressDropboxOAuth.doAuth()
+        sinon.spy expressDropboxOAuth, 'checkAuth'
 
         request app
           .get ENDPOINT_AUTH
           .query code: 'someCode'
           .end (err) ->
-            expressDropboxAuth.checkAuth.should.have.been.calledTwice
+            expressDropboxOAuth.checkAuth.should.have.been.calledTwice
             done err
 
       it 'should call through when code param exists in query', (done) ->
         assumeStoredState 'myState'
         response = 'Hello Authenticated User'
-        app.get ENDPOINT_AUTH, expressDropboxAuth.doAuth(), (req, res) ->
+        app.get ENDPOINT_AUTH, expressDropboxOAuth.doAuth(), (req, res) ->
           res.send response
 
-        sinon.stub(expressDropboxAuth.dropboxClient, 'getUserInfo').callsArgWithAsync 0, null, {}
-        authenticatedUser = sinon.stub(expressDropboxAuth.dropboxClient, 'isAuthenticated')
+        sinon.stub(expressDropboxOAuth.dropboxClient, 'getUserInfo').callsArgWithAsync 0, null, {}
+        authenticatedUser = sinon.stub(expressDropboxOAuth.dropboxClient, 'isAuthenticated')
         authenticatedUser.onFirstCall().returns false
         authenticatedUser.onSecondCall().returns true
 
@@ -315,7 +315,7 @@ describe 'ExpressDropboxAuth', ->
       it 'should save the received code in storage', (done) ->
         assumeStoredState 'myState'
         sinon.spy fakeStorageSetCalls, 'token'
-        app.get ENDPOINT_AUTH, expressDropboxAuth.doAuth()
+        app.get ENDPOINT_AUTH, expressDropboxOAuth.doAuth()
 
         request app
           .get ENDPOINT_AUTH
@@ -328,7 +328,7 @@ describe 'ExpressDropboxAuth', ->
         queryCode = 'someCode'
         assumeStoredState 'myState'
         sinon.stub(fakeStorageSetCalls, 'token').callsArgWithAsync 1, 'Error'
-        app.get ENDPOINT_AUTH, expressDropboxAuth.doAuth()
+        app.get ENDPOINT_AUTH, expressDropboxOAuth.doAuth()
 
         request app
           .get ENDPOINT_AUTH
@@ -339,7 +339,7 @@ describe 'ExpressDropboxAuth', ->
         response = 'someResponse'
         error = new Error 'my message'
         sinon.stub(fakeStorageSetCalls, 'token').callsArgWithAsync 1, error
-        app.get ENDPOINT_AUTH, expressDropboxAuth.doAuth (err, req, res) ->
+        app.get ENDPOINT_AUTH, expressDropboxOAuth.doAuth (err, req, res) ->
           err.should.equal error
           res.send response
 
@@ -351,7 +351,7 @@ describe 'ExpressDropboxAuth', ->
   describe 'logout', ->
     it 'should logout', (done) ->
       response = 'logged out'
-      app.get ENDPOINT_LOGOUT, expressDropboxAuth.logout(), (req, res) ->
+      app.get ENDPOINT_LOGOUT, expressDropboxOAuth.logout(), (req, res) ->
         res.send response
 
       request app
@@ -362,7 +362,7 @@ describe 'ExpressDropboxAuth', ->
     it 'should remove code and state from storage', (done) ->
       sinon.spy fakeStorage, 'delete'
 
-      app.get ENDPOINT_LOGOUT, expressDropboxAuth.logout()
+      app.get ENDPOINT_LOGOUT, expressDropboxOAuth.logout()
 
       request app
         .get ENDPOINT_LOGOUT
@@ -375,7 +375,7 @@ describe 'ExpressDropboxAuth', ->
     it 'should reset the dropbox client', (done) ->
       resetSpy = sinon.spy Dropbox.Client.prototype, 'reset'
 
-      app.get ENDPOINT_LOGOUT, expressDropboxAuth.logout()
+      app.get ENDPOINT_LOGOUT, expressDropboxOAuth.logout()
 
       request app
         .get ENDPOINT_LOGOUT
@@ -386,7 +386,7 @@ describe 'ExpressDropboxAuth', ->
     it 'should do a 500 on fail', (done) ->
       sinon.stub(fakeStorage, 'delete').callsArgWithAsync 1, 'myError'
 
-      app.get ENDPOINT_LOGOUT, expressDropboxAuth.logout()
+      app.get ENDPOINT_LOGOUT, expressDropboxOAuth.logout()
 
       request app
         .get ENDPOINT_LOGOUT
@@ -397,7 +397,7 @@ describe 'ExpressDropboxAuth', ->
       fakeError = 'myError'
       sinon.stub(fakeStorage, 'delete').callsArgWithAsync 1, fakeError
 
-      app.get ENDPOINT_LOGOUT, expressDropboxAuth.logout (err, req, res) ->
+      app.get ENDPOINT_LOGOUT, expressDropboxOAuth.logout (err, req, res) ->
         err.message.should.equal "" + [fakeError, fakeError]
         res.send response
 

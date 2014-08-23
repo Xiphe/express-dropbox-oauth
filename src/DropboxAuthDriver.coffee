@@ -1,6 +1,6 @@
 constants = require './constants'
 
-class ExpressDropboxAuthDriver
+class DropboxAuthDriver
   constructor: (@req, @res, @storage, @fail) ->
     @redirected = false
 
@@ -21,4 +21,4 @@ class ExpressDropboxAuthDriver
       return @fail err if err
       callback state
 
-module.exports = ExpressDropboxAuthDriver
+module.exports = DropboxAuthDriver
