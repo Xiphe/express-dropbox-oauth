@@ -6,7 +6,8 @@
   "scripts": {
     "test": "mocha --compilers coffee:coffee-script/register -R spec",
     "watch": "mocha --compilers coffee:coffee-script/register --watch -R spec",
-    "coverage": "coffee -o src/ src/ && coffee -o test/ test/ && istanbul cover node_modules/.bin/_mocha --report html -- -R spec -t 3000 -s 2000",
+    "coverage": "coffee -o src/ src/ && coffee -o test/ test/ && istanbul cover node_modules/.bin/_mocha --report html -- -R spec -t 3000 -s 2000 && npm run clean",
+    "clean": "find src -iname '*.js' -delete && find test -iname '*.js' -delete",
     "coveralls": "coffee -o src/ src/ && coffee -o test/ test/ && istanbul cover _mocha --report lcovonly -- -R spec -t 3000 -s 2000 && cat ./coverage/lcov.info | coveralls"
   },
   "author": "Hannes Diercks <express-dropbox-auth@xiphe.net>",

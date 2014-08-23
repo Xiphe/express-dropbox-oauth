@@ -245,6 +245,38 @@ describe 'ExpressDropboxAuth', ->
         .expect 'location', /www\.dropbox\.com/
         .expect 302, done
 
+    it 'should fail when authenticate fails', (done) ->
+      someError = new Error 'hello'
+      response = 'failed'
+      sinon.stub(expressDropboxAuth.dropboxClient, 'authenticate')
+        .callsArgWithAsync 0, someError
+
+      app.get ENDPOINT_AUTH, expressDropboxAuth.doAuth (err, res, req) ->
+        err.should.equal someError
+        req.send response
+
+      request app
+        .get ENDPOINT_AUTH
+        .query code: 'someCode'
+        .expect response
+        .expect 200, done
+
+    it 'should fail when dropbox response contains an error', (done) ->
+      assumeStoredState 'someState'
+      response = 'failed again'
+      error = 'some very special error string'
+
+      app.get ENDPOINT_AUTH, expressDropboxAuth.doAuth (err, req, res) ->
+        err.should.match new RegExp error
+        res.send response
+
+      request app
+        .get ENDPOINT_AUTH
+        .query error: error
+        .expect response
+        .expect 200, done
+
+
     describe 'with successful authentication', ->
       queryCode = null
       beforeEach ->
