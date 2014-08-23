@@ -5,11 +5,218 @@ express-dropbox-oauth
 [![Coverage Status](https://coveralls.io/repos/Xiphe/express-dropbox-oauth/badge.png?branch=master)](https://coveralls.io/r/Xiphe/express-dropbox-oauth?branch=master)
 [![Dependency Status](https://david-dm.org/Xiphe/express-dropbox-oauth.svg)](https://david-dm.org/Xiphe/express-dropbox-oauth)
 
-Dropbox OAuth Middleware for ExpressJS
+Dropbox OAuth Middleware for [express](http://expressjs.com/)
+
+  - [Install](#install)
+  - [Dropbox App](#dropbox-app)
+  - [Init](#init)
+  - [Use](#use)
+  - [Database](#database)
+  - [Database Adapters](#database-adapters)
+  - [Example InMemory Database](#example-inmemory-database)
+  - [Example App](#example-app)
+  - [License](#license)
 
 
-To Be Documented!
+
+Install
+-------
+
+```sh
+npm install express-dropbox-oauth --save
+```
+
+
+
+Dropbox App
+-----------
+
+Create and Manage your Dropbox App here: [Dropbox App Console](https://www.dropbox.com/developers/apps).
+
+
+
+Init
+----
+
+```js
+// var app = [initiate app...]
+// var database = [initiate database...] see Database
+
+var ExpressDropboxOAuth = require('express-dropbox-oauth');
+var credentials = {
+  key: 'myAppKey',
+  secret: 'myAppSecret'
+}
+var expressDropboxAuth = new ExpressDropboxOAuth(credentials, database);
+```
+
+
+
+Use
+---
+
+See [Example App](#example-app)
+
+
+### Authenticate
+
+Try to create Auth-Token in Database.
+
+```js
+function errorRoute(err, req, res, next) {
+  res.send('Authentication failed with error: ' + err);
+}
+app.get('/authenticate', expressDropboxAuth.doAuth(errorRoute), function(req, res) {
+  res.send('Authentication succeeded!');
+});
+```
+
+### Check Auth
+
+Check if Auth-Token exists and is working.
+
+```js
+function errorRoute(err, req, res, next) {
+  res.send('Restricted Area!');
+}
+app.get('/onlyAuthenticated', expressDropboxAuth.checkAuth(errorRoute), function(req, res) {
+  res.send('Hey Mate!');
+});
+```
+
+### Log Out
+
+Remove Auth-Token from Database and reset client.
+
+```js
+function errorRoute(err, req, res, next) {
+  res.send('Logout failed, please retry.');
+}
+app.get('/logout', expressDropboxAuth.logout(errorRoute), function(req, res) {
+  res.send('Bye...');
+});
+```
+
+### Dropbox Client
+
+Use [dropbox-js](https://github.com/dropbox/dropbox-js) for something fancy.
+
+```js
+app.get('/profile', expressDropboxAuth.checkAuth(), function(req, res) {
+  expressDropboxAuth.dropboxClient.getUserInfo(function(err, user) {
+    res.send('Hello ' + user.name);
+  });
+});
+```
+
+
+
+Database
+--------
+
+Any ExpressDropboxOAuth Class needs a database in order to persist tokens and
+oAuth states between requests.
+
+### NeDB
+
+See [NeDB](https://github.com/louischatriot/nedb)
+
+```js
+// var userId = [initiate userId if needed. Leave empty for single user stuff]
+var Datastore = require('nedb');
+
+// See nedb documentation for In-Memory databases etc.
+var database = new Datastore(filename: 'myDatabase.nedb', autoload: true);
+var databaseAdapter = new ExpressDropboxAuth.StorageNedbAdapter(database, userId);
+var expressDropboxAuth = new ExpressDropboxAuth(credentials, databaseAdapter);
+```
+
+
+
+Database Adapters
 -----------------
+
+Existent Adapters:
+ * NeDB
+
+Writing a custom Adapter is simple. Contributions are very welcome :)  
+Adapters should provide thee public methods:
+
+
+ - `.set(key, value, done[(err)])`  
+    The done callback has to be optional and should be called with any errors
+    that occurred while saving.
+
+ - `.get(key, done[(err, value)])`  
+    The done callback must be called with the stored value
+    and any errors that occurred while getting.
+
+ - `.delete(key, done[(err)])`  
+    The done callback has to be optional and should be called with any errors
+    that occurred while deleting.
+
+
+
+Example InMemory Database
+-------------------------
+
+```js
+
+var myDatabase = (function() {
+	var store = {};
+
+	return {
+		set: function(key, value, done) {
+			store[key] = value;
+			if (done instanceof Function) {
+				done();
+			}
+		},
+		get: function(key, done) {
+			var value, error;
+
+			if (typeof store[key] === 'undefined') {
+				error = new Error('Not found: ' + key);
+			} else {
+				value = store[key]
+			}
+
+			done(error, value);
+		},
+		delete: function(key, done) {
+			if (typeof store[key] !== 'undefined') {
+				delete store[key];
+			}
+
+			if (done instanceof Function) {
+				done();
+			}
+		}
+
+	}
+})();
+
+```
+
+
+
+Example App
+-----------
+
+`coffee scripts/example.coffee --appKey=myAppKey --appSecret=myAppSecret`
+
+This starts up an example server on port 3000 with an in-memory database.
+
+Options:
+
+```
+  --appKey        Required: The Key of our App
+  --appSecret     Required: The Secret of our App
+  --databaseFile  Use (and create) the given database file instead of just memory
+  --userId        Fake another user (requires --databaseFile)
+  --port          Use another port (Default: 3000)
+```
+
 
 
 License
