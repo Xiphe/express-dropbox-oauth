@@ -1,13 +1,14 @@
-argv = require('minimist')(process.argv.slice(2))
-
 #* CONFIG
 #********
+
+argv = require('minimist')(process.argv.slice(2))
 
 USER_ID = argv.userId || false
 APP_KEY = argv.appKey
 APP_SECRET = argv.appSecret
 DATABASE_FILE = argv.databaseFile
 SERVER_PORT = argv.port || 3000
+
 
 #* BOOTSTRAP
 #***********
