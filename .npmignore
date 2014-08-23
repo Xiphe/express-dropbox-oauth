@@ -1,0 +1,7 @@
+.git*
+coverage/
+scripts/
+test/
+src/
+.DS_Store
+.travis.yml
