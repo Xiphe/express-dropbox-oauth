@@ -1,6 +1,6 @@
 {
   "name": "express-dropbox-oauth",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Dropbox OAuth Middleware for express.",
   "author": "Hannes Diercks <express-dropbox-oauth@xiphe.net>",
   "license": "MIT",
