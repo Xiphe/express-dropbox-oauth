@@ -25,7 +25,7 @@ describe 'ExpressDropboxOAuth', ->
         fakeStorageSetCalls.token(value, done)
     get: (key, done) ->
       if key == constants.STORAGE_KEY_STATE then fakeStorageGetCalls.state(done) else fakeStorageGetCalls.token(done)
-    delete: (key, done) -> done?()
+    remove: (key, done) -> done?()
 
   assumeStoredState = (state) ->
     sinon.stub(fakeStorageGetCalls, 'state').callsArgWithAsync 0, null, state
@@ -360,16 +360,16 @@ describe 'ExpressDropboxOAuth', ->
         .expect 200, done
 
     it 'should remove code and state from storage', (done) ->
-      sinon.spy fakeStorage, 'delete'
+      sinon.spy fakeStorage, 'remove'
 
       app.get ENDPOINT_LOGOUT, expressDropboxOAuth.logout()
 
       request app
         .get ENDPOINT_LOGOUT
         .end (err) ->
-          fakeStorage.delete.should.have.been.calledTwice
-          fakeStorage.delete.should.have.been.calledWith constants.STORAGE_KEY_TOKEN
-          fakeStorage.delete.should.have.been.calledWith constants.STORAGE_KEY_STATE
+          fakeStorage.remove.should.have.been.calledTwice
+          fakeStorage.remove.should.have.been.calledWith constants.STORAGE_KEY_TOKEN
+          fakeStorage.remove.should.have.been.calledWith constants.STORAGE_KEY_STATE
           done err
 
     it 'should reset the dropbox client', (done) ->
@@ -384,7 +384,7 @@ describe 'ExpressDropboxOAuth', ->
           done err
 
     it 'should do a 500 on fail', (done) ->
-      sinon.stub(fakeStorage, 'delete').callsArgWithAsync 1, 'myError'
+      sinon.stub(fakeStorage, 'remove').callsArgWithAsync 1, 'myError'
 
       app.get ENDPOINT_LOGOUT, expressDropboxOAuth.logout()
 
@@ -395,7 +395,7 @@ describe 'ExpressDropboxOAuth', ->
     it 'should invoke a given callback on fail', (done) ->
       response = 'rescued somehow...'
       fakeError = 'myError'
-      sinon.stub(fakeStorage, 'delete').callsArgWithAsync 1, fakeError
+      sinon.stub(fakeStorage, 'remove').callsArgWithAsync 1, fakeError
 
       app.get ENDPOINT_LOGOUT, expressDropboxOAuth.logout (err, req, res) ->
         err.message.should.equal "" + [fakeError, fakeError]
