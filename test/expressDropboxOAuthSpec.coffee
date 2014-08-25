@@ -236,6 +236,14 @@ describe 'ExpressDropboxOAuth', ->
             param.should.equal fakeState
             done err
 
+      it 'should not redirect twice', (done) ->
+        getDriver (err, driver) ->
+          sinon.stub res, 'redirect'
+          driver.doAuthorize()
+          driver.doAuthorize()
+          res.redirect.should.have.been.calledOnce
+          done()
+
     it 'should redirect to dropbox when authorizing without a code param', (done) ->
       assumeStoredState 'myState'
       app.get ENDPOINT_AUTH, expressDropboxOAuth.doAuth()
