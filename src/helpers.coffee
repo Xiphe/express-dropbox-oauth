@@ -27,10 +27,10 @@ module.exports =
       return cueue -= 1 if cueue > 0
       next errors
 
-    storage.delete constants.STORAGE_KEY_STATE, (err) ->
+    storage.remove constants.STORAGE_KEY_STATE, (err) ->
       errors.push err if err
       step()
 
-    storage.delete constants.STORAGE_KEY_TOKEN, (err) ->
+    storage.remove constants.STORAGE_KEY_TOKEN, (err) ->
       errors.push err if err
       step()

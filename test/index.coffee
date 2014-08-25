@@ -21,7 +21,3 @@ describe 'setup', ->
     spy = sinon.spy()
     spy 5
     spy.should.have.been.calledWith 5
-
-
-require './expressDropboxOAuthSpec'
-require './storage/nedbAdapterSpec'

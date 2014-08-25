@@ -2,7 +2,6 @@ Dropbox = require 'dropbox'
 helpers = require './helpers'
 constants = require './constants'
 DropboxAuthDriver = require './DropboxAuthDriver'
-StorageNedbAdapter = require './storage/NedbAdapter'
 
 class ExpressDropboxOAuth
   constructor: (credentials, @storage) ->
@@ -48,7 +47,7 @@ class ExpressDropboxOAuth
 
           @dropboxClient.authDriver driver
           @dropboxClient.authenticate (err, client) =>
-            @storage.delete constants.STORAGE_KEY_STATE
+            @storage.remove constants.STORAGE_KEY_STATE
             return fail err if err
             @storage.set constants.STORAGE_KEY_TOKEN, client.credentials().token, (err) =>
               return fail err if err
@@ -70,5 +69,4 @@ class ExpressDropboxOAuth
         return fail new Error "" + errors if errors.length
         next()
 
-ExpressDropboxOAuth.StorageNedbAdapter = StorageNedbAdapter
 module.exports = ExpressDropboxOAuth

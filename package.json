@@ -17,11 +17,12 @@
     "coverage": "coffee -o src/ src/ && coffee -o test/ test/ && istanbul cover node_modules/.bin/_mocha --report html -- -R spec -t 3000 -s 2000 && npm run clean",
     "clean": "find src -iname '*.js' -delete && find test -iname '*.js' -delete",
     "coveralls": "coffee -o src/ src/ && coffee -o test/ test/ && istanbul cover _mocha --report lcovonly -- -R spec -t 3000 -s 2000 && cat ./coverage/lcov.info | coveralls",
-    "prepublish": "coffee -o lib/ src/"
+    "prepublish": "coffee -o lib/ src/",
+    "postinstall": "cd ./node_modules/dropbox && npm install"
   },
   "main": "lib/index.js",
   "dependencies": {
-    "dropbox": "Xiphe/dropbox-js#50cef4dfe1daf0f6c539bffe2c9256dd2fcefb12"
+    "dropbox": "dropbox/dropbox-js#dece3d13d49d89ea125f3bdc21a3ddcd56388807"
   },
   "devDependencies": {
     "coffee-script": "~1.7.1",
@@ -34,6 +35,7 @@
     "supertest": "~0.13.0",
     "minimist": "~1.1.0",
     "istanbul": "~0.2.8",
-    "coveralls": "~2.10.0"
+    "coveralls": "~2.10.0",
+    "idkeyvalue": "0.0.1"
   }
 }

@@ -14,6 +14,7 @@ SERVER_PORT = argv.port || 3000
 #***********
 
 ExpressDropboxOAuth = require './../src/index'
+idkeyvalue = require 'idkeyvalue'
 express = require 'express'
 Datastore = require 'nedb'
 
@@ -21,11 +22,11 @@ credentials =
   key: APP_KEY
   secret: APP_SECRET
 
+
 database = new Datastore filename: DATABASE_FILE, autoload: true
-databaseAdapter = new ExpressDropboxOAuth.StorageNedbAdapter database, USER_ID
+databaseAdapter = new idkeyvalue.NedbAdapter database, USER_ID
 expressDropboxOAuth = new ExpressDropboxOAuth credentials, databaseAdapter
 app = express()
-
 
 #* ROUTES
 #********
