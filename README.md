@@ -114,88 +114,21 @@ app.get('/profile', expressDropboxAuth.checkAuth(), function(req, res) {
 Database
 --------
 
-Any ExpressDropboxOAuth Class needs a database in order to persist tokens and
-oAuth states between requests.
+We can use any Database adapter from [idkeyvalue](https://github.com/Xiphe/idkeyvalue).
 
-### NeDB
-
-See [NeDB](https://github.com/louischatriot/nedb)
+For example [NeDB](https://github.com/louischatriot/nedb)
 
 ```js
 // var userId = [initiate userId if needed. Leave empty for single user stuff]
 var Datastore = require('nedb');
+var NedbAdapter = require('idkeyvalue').NedbAdapter
 
 // See nedb documentation for In-Memory databases etc.
 var database = new Datastore(filename: 'myDatabase.nedb', autoload: true);
-var databaseAdapter = new ExpressDropboxAuth.StorageNedbAdapter(database, userId);
+var databaseAdapter = new NedbAdapter(database, userId);
 var expressDropboxAuth = new ExpressDropboxAuth(credentials, databaseAdapter);
-```
 
-
-
-Database Adapters
------------------
-
-Existent Adapters:
- * NeDB
-
-Writing a custom Adapter is simple. Contributions are very welcome :)  
-Adapters should provide thee public methods:
-
-
- - `.set(key, value, done[(err)])`  
-    The done callback has to be optional and should be called with any errors
-    that occurred while saving.
-
- - `.get(key, done[(err, value)])`  
-    The done callback must be called with the stored value
-    and any errors that occurred while getting.
-
- - `.delete(key, done[(err)])`  
-    The done callback has to be optional and should be called with any errors
-    that occurred while deleting.
-
-
-
-Example InMemory Database
--------------------------
-
-```js
-
-var myDatabase = (function() {
-	var store = {};
-
-	return {
-		set: function(key, value, done) {
-			store[key] = value;
-			if (done instanceof Function) {
-				done();
-			}
-		},
-		get: function(key, done) {
-			var value, error;
-
-			if (typeof store[key] === 'undefined') {
-				error = new Error('Not found: ' + key);
-			} else {
-				value = store[key]
-			}
-
-			done(error, value);
-		},
-		delete: function(key, done) {
-			if (typeof store[key] !== 'undefined') {
-				delete store[key];
-			}
-
-			if (done instanceof Function) {
-				done();
-			}
-		}
-
-	}
-})();
-
+// Do crazy stuff now! (see Use)
 ```
 
 
@@ -203,9 +136,9 @@ var myDatabase = (function() {
 Example App
 -----------
 
-`coffee scripts/example.coffee --appKey=myAppKey --appSecret=myAppSecret`
+Run `coffee scripts/example.coffee --appKey=myAppKey --appSecret=myAppSecret`
 
-This starts up an example server on port 3000 with an in-memory database.
+This starts up an example server [http://localhost:3000]() with an in-memory database.
 
 Options:
 
