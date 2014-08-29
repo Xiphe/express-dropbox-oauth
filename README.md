@@ -46,7 +46,7 @@ var ExpressDropboxOAuth = require('express-dropbox-oauth');
 var credentials = {
   key: 'myAppKey',
   secret: 'myAppSecret'
-}
+};
 var expressDropboxAuth = new ExpressDropboxOAuth(credentials, database);
 ```
 
