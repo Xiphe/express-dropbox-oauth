@@ -58,7 +58,7 @@ describe 'ExpressDropboxOAuth', ->
       xhrStub.callCount.should.equal expectXhr
 
   it 'should expose Dropbox', ->
-    expressDropboxOAuth.Dropbox.should.equal Dropbox
+    ExpressDropboxOAuth.Dropbox.should.equal Dropbox
 
   it 'should expose the dropboxClient', ->
     expressDropboxOAuth.dropboxClient.should.be.an.instanceof Dropbox.Client
@@ -136,19 +136,19 @@ describe 'ExpressDropboxOAuth', ->
 
     describe 'state', ->
       it 'should create a state parameter', (done) ->
-        sinon.spy expressDropboxOAuth.Dropbox.Util.Oauth, 'randomAuthStateParam'
+        sinon.spy ExpressDropboxOAuth.Dropbox.Util.Oauth, 'randomAuthStateParam'
 
         app.get ENDPOINT_AUTH, expressDropboxOAuth.doAuth()
 
         request app
           .get ENDPOINT_AUTH
           .end (err) ->
-            expressDropboxOAuth.Dropbox.Util.Oauth.randomAuthStateParam.should.have.been.called
+            ExpressDropboxOAuth.Dropbox.Util.Oauth.randomAuthStateParam.should.have.been.called
             done err
 
       it 'should tell the storage to set the state parameter', (done) ->
         fakeState = 'someState'
-        sinon.stub(expressDropboxOAuth.Dropbox.Util.Oauth, 'randomAuthStateParam').returns fakeState
+        sinon.stub(ExpressDropboxOAuth.Dropbox.Util.Oauth, 'randomAuthStateParam').returns fakeState
         sinon.spy fakeStorage, 'set'
 
         app.get ENDPOINT_AUTH, expressDropboxOAuth.doAuth()
@@ -161,7 +161,7 @@ describe 'ExpressDropboxOAuth', ->
 
       it 'should not create a state parameter when present in request nor set it', (done) ->
         fakeState = 'someState'
-        sinon.spy expressDropboxOAuth.Dropbox.Util.Oauth, 'randomAuthStateParam'
+        sinon.spy ExpressDropboxOAuth.Dropbox.Util.Oauth, 'randomAuthStateParam'
         sinon.spy fakeStorage, 'set'
 
         app.get ENDPOINT_AUTH, expressDropboxOAuth.doAuth()
@@ -170,7 +170,7 @@ describe 'ExpressDropboxOAuth', ->
           .get ENDPOINT_AUTH
           .query state: fakeState
           .end (err) ->
-            expressDropboxOAuth.Dropbox.Util.Oauth.randomAuthStateParam.should.not.have.been.called
+            ExpressDropboxOAuth.Dropbox.Util.Oauth.randomAuthStateParam.should.not.have.been.called
             fakeStorage.set.should.not.have.been.called
             done err
 

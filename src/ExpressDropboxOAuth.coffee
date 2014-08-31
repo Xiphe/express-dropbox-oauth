@@ -5,7 +5,6 @@ DropboxAuthDriver = require './DropboxAuthDriver'
 
 class ExpressDropboxOAuth
   constructor: (credentials, @storage) ->
-    @Dropbox = Dropbox
     @dropboxClient = new Dropbox.Client credentials
 
   checkAuth: (failCb) ->
@@ -69,4 +68,5 @@ class ExpressDropboxOAuth
         return fail new Error "" + errors if errors.length
         next()
 
+ExpressDropboxOAuth.Dropbox = Dropbox
 module.exports = ExpressDropboxOAuth
